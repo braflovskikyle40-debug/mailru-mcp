@@ -111,7 +111,7 @@ SMTP, но лишь на адреса из `MAILRU_ALLOWED_RECIPIENTS`:
 "env": {
   "MAILRU_EMAIL": "you@mail.ru",
   "MAILRU_PASSWORD": "пароль-для-внешнего-приложения",
-  "MAILRU_ALLOWED_RECIPIENTS": "boss@company.ru,@service-m2.ru"
+  "MAILRU_ALLOWED_RECIPIENTS": "boss@company.ru,@partner.example.com"
 }
 ```
 
