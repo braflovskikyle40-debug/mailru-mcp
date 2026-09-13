@@ -313,3 +313,65 @@ class MailruClient:
         if status != "OK" or not data or not data[0]:
             return 0
         return len(data[0].split())
+
+    # --- удаление ---
+
+    def find_trash(self) -> str | None:
+        """Ищет папку корзины: сначала по флагу \\Trash, затем по имени."""
+        imap = self.connect()
+        status, rows = imap.list()
+        if status != "OK":
+            return None
+
+        fallback = None
+        for row in rows or []:
+            raw = row.decode(errors="replace")
+            name = decode_folder(raw.rsplit(' "', 1)[-1].strip('"'))
+            if "\\Trash" in raw:
+                return name
+            if name.lower() in ("корзина", "trash", "deleted items", "bin"):
+                fallback = name
+        return fallback
+
+    def delete_to_trash(self, uids: list[str], mailbox: str = "INBOX") -> dict:
+        """Переносит письма в корзину — как кнопка «Удалить» в интерфейсе.
+
+        Обратимо: письма можно вернуть из корзины, пока она не очищена.
+        Безвозвратного удаления в этом клиенте нет намеренно.
+        """
+        trash = self.find_trash()
+        if not trash:
+            raise ValueError("Не найдена папка корзины в этом ящике")
+        if trash == mailbox:
+            raise ValueError("Письма уже в корзине — дальше удалять нечего")
+        result = self.move(uids, trash, mailbox=mailbox)
+        return {"trash_folder": trash, **result}
+
+    # --- черновики и ответы ---
+
+    def get_headers(self, uid: str, mailbox: str = "INBOX") -> dict:
+        """Заголовки письма, нужные для корректного ответа в той же ветке."""
+        imap = self.connect(mailbox)
+        status, raw = imap.uid(
+            "FETCH", uid,
+            "(BODY.PEEK[HEADER.FIELDS (FROM REPLY-TO SUBJECT MESSAGE-ID REFERENCES)])",
+        )
+        if status != "OK" or not raw or not isinstance(raw[0], tuple):
+            return {}
+        message = email.message_from_bytes(raw[0][1])
+        reply_to = decode_mime(message.get("Reply-To")) or decode_mime(message.get("From"))
+        return {
+            "from": decode_mime(message.get("From")),
+            "reply_to": reply_to,
+            "subject": decode_mime(message.get("Subject")),
+            "message_id": (message.get("Message-ID") or "").strip(),
+            "references": (message.get("References") or "").strip(),
+        }
+
+    def append_draft(self, raw_message: bytes, folder: str) -> bool:
+        """Кладёт готовое письмо в папку (обычно «Черновики»)."""
+        imap = self.connect()
+        status, _ = imap.append(
+            f'"{encode_folder(folder)}"', "\\Draft", None, raw_message
+        )
+        return status == "OK"

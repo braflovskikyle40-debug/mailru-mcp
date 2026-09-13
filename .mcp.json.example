@@ -6,7 +6,8 @@
       "cwd": "/путь/к/mailru-mcp",
       "env": {
         "MAILRU_EMAIL": "you@mail.ru",
-        "MAILRU_PASSWORD": "пароль-для-внешнего-приложения"
+        "MAILRU_PASSWORD": "пароль-для-внешнего-приложения",
+        "MAILRU_ALLOWED_RECIPIENTS": ""
       }
     }
   }
