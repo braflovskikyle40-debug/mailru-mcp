@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mailru": {
+      "command": "python",
+      "args": ["-m", "mailru_mcp"],
+      "cwd": "/путь/к/mailru-mcp",
+      "env": {
+        "MAILRU_EMAIL": "you@mail.ru",
+        "MAILRU_PASSWORD": "пароль-для-внешнего-приложения"
+      }
+    }
+  }
+}
